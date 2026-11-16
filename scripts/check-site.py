@@ -8,18 +8,24 @@ root=Path(sys.argv[1] if len(sys.argv)>1 else 'public')
 data=json.loads(Path('data/generated.json').read_text())
 assert data['extensions'], 'Empty catalog'
 prefix='/cnpg-extensions-website/'
-errors=[];checked=0
+errors=[];checked=0;anchors={}
+for page in root.rglob("*.html"):
+    anchors[page.resolve()]={tag.get("id") for tag in BeautifulSoup(page.read_text(),"html.parser").select("[id]")}
 for page in root.rglob('*.html'):
     soup=BeautifulSoup(page.read_text(),'html.parser')
     for tag in soup.select('[href], [src]'):
         href=tag.get('href') or tag.get('src');url=urlsplit(href)
-        if url.scheme or url.netloc or not url.path:continue
+        if url.scheme or url.netloc:continue
+        if not url.path:
+            if url.fragment and unquote(url.fragment) not in anchors[page.resolve()]:errors.append(f'{page}: missing anchor {href}')
+            continue
         path=unquote(url.path)
         if path.startswith(prefix):target=root/path[len(prefix):]
         elif path.startswith('/'):target=root/path.lstrip('/')
         else:target=page.parent/path
         if target.is_dir():target=target/'index.html'
         if not target.exists():errors.append(f'{page}: missing {href}')
+        elif url.fragment and target.suffix=='.html' and unquote(url.fragment) not in anchors.get(target.resolve(),set()):errors.append(f'{page}: missing anchor {href}')
         checked+=1
 for e in data['extensions']:
     assert (root/'extensions'/e['name']/'index.html').exists(),e['name']

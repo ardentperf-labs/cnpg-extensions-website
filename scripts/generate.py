@@ -122,7 +122,10 @@ def readme_html(text, repo, commit, path, routes, depth=2):
     soup=BeautifulSoup(html,'html.parser')
     for a in soup.find_all(['a','img']):
         key='href' if a.name=='a' else 'src'; link=a.get(key,'')
-        if not link or link.startswith('#'):continue
+        if not link:continue
+        if link.startswith('#'):
+            if path=='README.md' and link=='#supported-extensions': a[key]='../'*depth+'extensions/'
+            continue
         absolute=urljoin(f'https://github.com/{repo}/blob/{commit}/{path}',link)
         if not urlsplit(link).scheme:
             target=absolute.split('#')[0].split(f'/blob/{commit}/')[-1]
@@ -209,6 +212,7 @@ def main():
         body=readme_html(text,repo,recipe['commit'],recipe['path'],routes)
         (directory/'index.md').write_text('---\n'+yaml.safe_dump(fm,sort_keys=False)+'---\n'+body+'\n')
     result={'generatedAt':NOW,'commits':commits,'count':len(entries),'extensions':entries,'database':database}
+    (ROOT/'data').mkdir(exist_ok=True)
     (ROOT/'data/generated.json').write_text(json.dumps(result))
     search=[{k:v for k,v in e.items() if k!='variants'} for e in entries]
     (ROOT/'static/catalog.json').write_text(json.dumps({'generatedAt':NOW,'extensions':search}))
