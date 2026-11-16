@@ -77,7 +77,7 @@ def scan(sbom, grype, database):
         k=(v['id'],a['name'],a.get('version',''))
         findings[k]={'id':v['id'],'package':a['name'],'version':a.get('version',''),'severity':v.get('severity','Unknown'),
                      'url':v.get('dataSource',''),'fix':v.get('fix',{}),'namespace':v.get('namespace','')}
-    return {'status':'scanned','scannedAt':NOW,'database':database,'scanner':raw.get('descriptor',{}).get('version',''),
+    return {'status':'scanned','scannedAt':datetime.now(timezone.utc).isoformat(timespec='seconds'),'database':database,'scanner':raw.get('descriptor',{}).get('version',''),
             'findings':sorted(findings.values(),key=lambda v:(v['severity'],v['id'],v['package'])),
             'report':str(dest.relative_to(ROOT/'static'))}
 
@@ -96,7 +96,7 @@ def inspect_image(item, grype, database):
                 manifest=reg.get(pd);config=reg.get(manifest['config']['digest'],'blobs')
                 record['labels']=config.get('config',{}).get('Labels',{}) or {}
                 att=next((m for m in manifests if m.get('annotations',{}).get('vnd.docker.reference.digest')==pd and m.get('annotations',{}).get('vnd.docker.reference.type')=='attestation-manifest'),None)
-                if not att: raise ValueError('Published image has no attached BuildKit SBOM for this platform')
+                if not att: raise ValueError('SBOM not published for this architecture')
                 am=reg.get(att['digest']);spdx=None
                 for layer in am.get('layers',[]):
                     if layer.get('annotations',{}).get('in-toto.io/predicate-type')=='https://spdx.dev/Document':
@@ -104,7 +104,7 @@ def inspect_image(item, grype, database):
                         if statement.get('predicateType')!='https://spdx.dev/Document': raise ValueError('Unexpected SBOM predicate type')
                         if not any(s.get('digest',{}).get('sha256')==pd[7:] for s in statement.get('subject',[])): raise ValueError('SBOM subject does not match platform manifest')
                         spdx=statement['predicate'];break
-                if not spdx or not spdx.get('spdxVersion','').startswith('SPDX-'): raise ValueError('No SPDX document in platform attestations')
+                if not spdx or not spdx.get('spdxVersion','').startswith('SPDX-'): raise ValueError('SPDX SBOM not published for this architecture')
                 dest=REPORTS/item['name']/f"{item['distro']}-pg{item['pg']}-{arch}.spdx.json"
                 dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(json.dumps(spdx))
                 record.update(status='available',packages=packages(spdx),licenses=spdx.get('hasExtractedLicensingInfos',[]),sbom=str(dest.relative_to(ROOT/'static')))
@@ -199,7 +199,7 @@ def main():
         text=recipe['readme'].read_text()
         soup=BeautifulSoup(markdown.markdown(text),'html.parser');first=soup.find('p')
         description=first.get_text(' ',strip=True) if first else name
-        entry={'name':name,'title':recipe['meta'].get('sql_name',name),'description':description,'publisher':publisher,'build':recipe['build'].capitalize(),
+        entry={'name':name,'title':recipe['meta'].get('sql_name',name),'description':description,'publisher':publisher,'build':'PGRX' if recipe['build'].lower()=='pgrx' else recipe['build'].capitalize(),
             'source':f"https://github.com/{repo}/blob/{recipe['commit']}/{recipe['path']}", 'variants':variants,
             'version':variants[0]['version'],'distros':sorted({i['distro'] for i in variants}),'pgVersions':sorted({i['pg'] for i in variants}),
             'declaredLicenses':recipe['meta'].get('licenses',[])}
@@ -214,10 +214,11 @@ def main():
     (ROOT/'static/catalog.json').write_text(json.dumps({'generatedAt':NOW,'extensions':search}))
     # Keep the top-level setup in sync with the published README, without manually duplicating YAML.
     readme=(CACHE/'source/README.md').read_text()
+    requirements='## Requirements'+readme.split('## Requirements',1)[1].split('\n---',1)[0]
     quick=readme.split('## Quick start',1)[1].split('\n## Supported Extensions',1)[0].strip().rstrip('-\n')
     (ROOT/'content/getting-started.md').write_text('---\ntitle: Get started\ndescription: Install the catalog, configure alerts, and enable extensions in your databases.\n---\n'+
         '<p class="source-note">From the <a href="https://github.com/cnpg-extensions/postgres-extensions-containers/blob/'+commits['source']+'/README.md">project quick start</a>. Requires CloudNativePG 1.29+, PostgreSQL 18+, and Kubernetes with ImageVolume support.</p>\n'+
-        readme_html(quick,REPOS['source'],commits['source'],'README.md',routes,depth=1))
+        readme_html(requirements+'\n\n'+quick,REPOS['source'],commits['source'],'README.md',routes,depth=1))
     print(f'Generated {len(entries)} extension pages from {len(images)} catalog images',flush=True)
 
 if __name__=='__main__':main()
