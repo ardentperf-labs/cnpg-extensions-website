@@ -59,3 +59,20 @@ class RefreshTimeTests(unittest.TestCase):
         self.assertIsNone(source_refresh_time(False, {'source':'abc'}, {'commits':{'source':'other'},'refreshedAt':'old'}, 'new'))
     def test_actual_refresh_records_fetch_time(self):
         self.assertEqual(source_refresh_time(True, {'source':'abc'}, {}, 'new'),'new')
+
+class MarkdownAlertTests(unittest.TestCase):
+    def test_github_warning_keeps_code_and_links(self):
+        from bs4 import BeautifulSoup
+        html=readme_html('> [!WARNING]\n> Use `instances: 1`. See [details](#replication).', 'org/repo','abc','extension/README.md',{})
+        soup=BeautifulSoup(html,'html.parser')
+        warning=soup.select_one('.github-alert-warning')
+        self.assertIsNotNone(warning)
+        self.assertEqual(warning.select_one('.github-alert-icon').text,'⚠')
+        self.assertIn('Warning',warning.select_one('.github-alert-title').text)
+        self.assertEqual(warning.code.text,'instances: 1')
+        self.assertEqual(warning.a['href'],'#replication')
+        self.assertNotIn('[!WARNING]',html)
+    def test_ordinary_quote_and_code_example_are_unchanged(self):
+        html=readme_html('> Ordinary quote\n\n```\n> [!WARNING]\n```','org/repo','abc','README.md',{})
+        self.assertNotIn('github-alert',html)
+        self.assertIn('[!WARNING]',html)

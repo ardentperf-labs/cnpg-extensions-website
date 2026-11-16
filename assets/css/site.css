@@ -160,3 +160,8 @@ input:focus-visible{outline:3px solid var(--accent);outline-offset:5px}
 .catalog-toolbar{padding:18px}
 .catalog-summary{margin:18px 0 12px}
 @media(max-width:700px){.extension-card{padding:12px 14px}.extension-grid{gap:10px}}
+
+.prose .github-alert{padding:14px 18px;margin:24px 0;border-left:4px solid var(--accent);background:var(--soft)}
+.prose .github-alert .github-alert-title{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--accent);margin:0 0 8px}
+.github-alert-icon{font-family:Arial,"Segoe UI Symbol",sans-serif;font-size:22px;line-height:1}
+.prose .github-alert>p:last-child{margin-bottom:0}

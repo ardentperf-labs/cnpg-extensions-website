@@ -157,6 +157,24 @@ def inspect_image(item, grype, database):
 def readme_html(text, repo, commit, path, routes, depth=2):
     html=markdown.markdown(text,extensions=['fenced_code','tables','toc'])
     soup=BeautifulSoup(html,'html.parser')
+    # GitHub alert markers are not part of Python Markdown's blockquote syntax.
+    alert_icons={'NOTE':'ⓘ','TIP':'☞','IMPORTANT':'!','WARNING':'⚠','CAUTION':'⚠'}
+    for quote in soup.find_all('blockquote'):
+        first=quote.find('p',recursive=False)
+        if not first or not first.contents or not isinstance(first.contents[0],str):
+            continue
+        match=re.match(r'^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](?:[ \t]*\n|[ \t]*$)',str(first.contents[0]))
+        if not match:
+            continue
+        kind=match.group(1)
+        first.contents[0].replace_with(str(first.contents[0])[match.end():])
+        if not first.get_text(strip=True) and not first.find():
+            first.decompose()
+        quote['class']=['github-alert','github-alert-'+kind.lower()]
+        title=soup.new_tag('p',attrs={'class':'github-alert-title'})
+        icon=soup.new_tag('span',attrs={'class':'github-alert-icon','aria-hidden':'true'})
+        icon.string=alert_icons[kind];title.append(icon);title.append(' '+kind.title())
+        quote.insert(0,title)
     for a in soup.find_all(['a','img']):
         key='href' if a.name=='a' else 'src'; link=a.get(key,'')
         if not link:continue
@@ -174,7 +192,7 @@ def readme_html(text, repo, commit, path, routes, depth=2):
     # Source Markdown is content, not executable page code.
     import bleach
     tags={'a','p','div','span','h1','h2','h3','h4','h5','h6','ul','ol','li','pre','code','strong','em','blockquote','table','thead','tbody','tr','th','td','hr','br','img','details','summary','del','sup','sub'}
-    return bleach.clean(str(soup),tags=tags,attributes={'*':['id','class'],'a':['href','title'],'img':['src','alt','width','height'],'details':['open']},protocols=['http','https','mailto'],strip=True)
+    return bleach.clean(str(soup),tags=tags,attributes={'*':['id','class'],'a':['href','title'],'img':['src','alt','width','height'],'details':['open'],'span':['class','aria-hidden']},protocols=['http','https','mailto'],strip=True)
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--refresh',action='store_true');parser.add_argument('--scan',action='store_true');parser.add_argument('--workers',type=int,default=4);parser.add_argument('--reuse-evidence',action='store_true',help='Local layout iteration only: reuse exact-digest evidence with original scan timestamps')
