@@ -5,7 +5,7 @@ No per-extension editorial data. Network failures are explicit, never zero findi
 import argparse, concurrent.futures, hashlib, json, os, re, shutil, subprocess, sys
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit, parse_qs, unquote, quote
 import requests, yaml, hcl2, markdown
 from hcl2.utils import SerializationOptions
 from bs4 import BeautifulSoup
@@ -30,12 +30,27 @@ def checkout(name, refresh):
         subprocess.run(['git','-C',str(path),'checkout','--detach','FETCH_HEAD'],check=True)
     return run('git','-C',str(path),'rev-parse','HEAD')
 
+def advisory_url(package):
+    purl=next((r.get('referenceLocator','') for r in package.get('externalRefs',[]) if r.get('referenceType')=='purl'),'')
+    if not purl.startswith('pkg:'): return ''
+    identity, _, query=purl[4:].partition('?')
+    kind, _, coordinate=identity.partition('/')
+    name, sep, version=coordinate.rpartition('@')
+    if not sep: return ''
+    qualifiers=parse_qs(query)
+    if kind=='cargo' and not qualifiers.get('repository_url'):
+        return 'https://deps.dev/cargo/'+quote(unquote(name),safe='')+'/'+quote(unquote(version),safe='')
+    if kind=='deb' and name.startswith('debian/'):
+        source=qualifiers.get('upstream',[''])[0]
+        if source: return 'https://security-tracker.debian.org/tracker/source-package/'+quote(source,safe='')
+    return ''
+
 def packages(spdx):
     # Preserve both SPDX fields and all expressions; never split AND/OR into a claim of alternatives.
     return sorted([{'name':p['name'],'version':p.get('versionInfo','Not recorded'),
                     'declared':p.get('licenseDeclared','NOASSERTION'),
                     'concluded':p.get('licenseConcluded','NOASSERTION'),
-                    'files':p.get('licenseInfoFromFiles',[])} for p in spdx.get('packages',[])],key=lambda p:(p['name'],p['version']))
+                    'files':p.get('licenseInfoFromFiles',[]),'advisoryURL':advisory_url(p)} for p in spdx.get('packages',[])],key=lambda p:(p['name'],p['version']))
 
 def check_digest(data, digest):
     if not digest.startswith('sha256:') or hashlib.sha256(data).hexdigest()!=digest[7:]:
@@ -186,6 +201,11 @@ def main():
                 image=f.result();images.append(image)
                 print(f"{len(images)}/{len(jobs)} {image['name']} {image['distro']}: {image['status']}",flush=True)
         evidence_file.write_text(json.dumps({'images':images,'database':database}))
+    # Rebuild display fields from original SPDX, including during local evidence reuse.
+    for image in images:
+        for platform in image['platforms']:
+            if platform['status']=='available':
+                platform['packages']=packages(json.loads((ROOT/'static'/platform['sbom']).read_text()))
     entries=[]
     content=ROOT/'content/extensions';content.mkdir(parents=True,exist_ok=True)
     for old in content.glob('*/index.md'): old.unlink()

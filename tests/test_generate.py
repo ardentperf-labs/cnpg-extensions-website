@@ -4,7 +4,7 @@ import hcl2
 from hcl2.utils import SerializationOptions
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from generate import packages, check_digest, readme_html, scan, inspect_image
+from generate import packages, check_digest, readme_html, scan, inspect_image, advisory_url
 
 class MetadataTests(unittest.TestCase):
     def test_license_expressions_and_unknowns_are_not_lost(self):
@@ -34,6 +34,16 @@ class MetadataTests(unittest.TestCase):
         self.assertEqual(result['platforms'][0]['status'],'unavailable')
         self.assertIn('not published',result['platforms'][0]['reason'])
         self.assertNotIn('scan',result['platforms'][0])
+    def test_advisory_links_use_exact_cargo_versions(self):
+        p={'externalRefs':[{'referenceType':'purl','referenceLocator':'pkg:cargo/tokio@1.43.0'}]}
+        self.assertEqual(advisory_url(p),'https://deps.dev/cargo/tokio/1.43.0')
+    def test_debian_link_uses_source_package_not_binary_name(self):
+        p={'name':'libssl3','externalRefs':[{'referenceType':'purl','referenceLocator':'pkg:deb/debian/libssl3@3.0.1?upstream=openssl'}]}
+        self.assertEqual(advisory_url(p),'https://security-tracker.debian.org/tracker/source-package/openssl')
+        p['externalRefs'][0]['referenceLocator']='pkg:deb/debian/libssl3@3.0.1'
+        self.assertEqual(advisory_url(p),'')
+    def test_unknown_ecosystems_do_not_get_guessed_links(self):
+        self.assertEqual(advisory_url({'name':'custom-library'}),'')
     def test_unavailable_database_is_not_clean_scan(self):
         result=scan(Path('unused'),'grype',{'error':'DB unavailable'})
         self.assertEqual(result['status'],'unavailable')

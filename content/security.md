@@ -91,7 +91,7 @@ grype sbom:image.spdx.json -o table
 grype sbom:image.spdx.json -o json > vulnerabilities.json
 ```
 
-The website's nightly build updates Grype's vulnerability database and scans each available platform-specific SPDX inventory. Grype matches package identities and versions against its aggregated advisory data, including distribution and language ecosystem sources. Results include the advisory, package, severity, and recorded fix version. Follow the linked advisory for context.
+The website's nightly build updates Grype's vulnerability database and scans each available platform-specific SPDX inventory. Grype matches package identities and versions against its aggregated advisory data, including distribution and language ecosystem sources. Downloadable scan reports include the advisory, package, severity, and recorded fix version. Extension pages show per-package Grype match counts beside external advisory links, rather than a CVE table. Follow those links for context; the external database may cover different versions or advisory sources.
 
 No severity or “won't fix” filters are applied to website reports. A match is not proof that an issue is exploitable in your workload. Zero matches are not a guarantee of safety. A failed or unavailable scan is labeled explicitly, never reported as zero vulnerabilities. Each report includes its scan timestamp, scanner version, database metadata, architecture, and image digest.
 

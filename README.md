@@ -36,13 +36,17 @@ time. Full reports are available as downloads in the published site.
   with `cloudnative-pg/postgres-extensions-containers` for upstream-published images.
 - Current versions: published OCI annotations or config labels, **not** a recipe
   version that may not have shipped yet. Trixie is the card's preferred variant;
-  detail pages show all variants.
+  detail pages select one distribution and architecture at a time.
 - Package versions and licenses: digest-checked BuildKit SPDX attestations, per
   architecture. Preserve declared/concluded expressions, file licenses, and custom
   license definitions without inferring missing terms. Unknown stays unknown.
 - Vulnerabilities: Grype against the current advisory database, scanning each
   published platform's SPDX document. No `wont-fix`, severity or fix-only filters.
-  Reports expose database metadata, image/platform digests, and scan time. Matches
+  Downloadable reports expose database metadata, image/platform digests, and scan time.
+  The dependency view shows unique Grype advisory-ID counts per package/version,
+  with exact-version Cargo links and Debian source-package tracker links derived
+  from SPDX package URLs. Missing scan results remain uncounted; external results
+  may differ. No CVE table is rendered. Matches
   are not exploitability verdicts; scans exclude the separate PostgreSQL base image.
 - Getting started: imported from the current top-level README; security examples
   show actual package evidence from the generated inventory.
