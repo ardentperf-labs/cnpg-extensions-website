@@ -2,7 +2,7 @@
 {{ $entry := index (where hugo.Data.generated.extensions "name" .Params.extension) 0 }}
 <article class="wrap extension-detail extension-redesign">
 <a class="back-link" href="{{ `extensions/` | relURL }}">← Explore extensions</a>
-<header class="extension-heading"><div><p class="eyebrow">{{ $entry.build }} · {{ $entry.publisher }}</p><h1>{{ .Title }}</h1></div><a class="source-link" href="{{ $entry.source }}" target="_blank" rel="noopener">Source README ↗</a></header>
+<header class="extension-heading"><div><h1>{{ .Title }}</h1></div><a class="source-link" href="{{ $entry.source }}" target="_blank" rel="noopener">Source README ↗</a></header>
 <nav class="detail-view-nav" aria-label="Extension views"><a href="#readme" data-detail-view="readme">Documentation</a><a href="#image-evidence" data-detail-view="image-evidence">Dependencies &amp; licenses</a></nav>
 <section id="readme" class="detail-view"><div class="readme-layout"><aside class="readme-nav" hidden><details open><summary>On this page</summary><nav aria-label="Documentation contents"></nav></details></aside><div class="prose readme-content">{{ .Content }}</div></div></section>
 <section id="image-evidence" class="detail-view inventory-view">
