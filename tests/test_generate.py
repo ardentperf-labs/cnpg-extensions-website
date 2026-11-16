@@ -4,7 +4,7 @@ import hcl2
 from hcl2.utils import SerializationOptions
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from generate import packages, check_digest, readme_html, scan, inspect_image, advisory_url
+from generate import source_refresh_time, packages, check_digest, readme_html, scan, inspect_image, advisory_url
 
 class MetadataTests(unittest.TestCase):
     def test_license_expressions_and_unknowns_are_not_lost(self):
@@ -50,3 +50,12 @@ class MetadataTests(unittest.TestCase):
         self.assertNotIn('findings',result)
 
 if __name__=='__main__': unittest.main()
+
+class RefreshTimeTests(unittest.TestCase):
+    def test_reuse_keeps_original_refresh_time(self):
+        self.assertEqual(source_refresh_time(False, {'source':'abc'}, {'commits':{'source':'abc'}, 'refreshedAt':'old'}, 'new'),'old')
+    def test_unknown_or_changed_cache_does_not_claim_freshness(self):
+        self.assertIsNone(source_refresh_time(False, {'source':'abc'}, {}, 'new'))
+        self.assertIsNone(source_refresh_time(False, {'source':'abc'}, {'commits':{'source':'other'},'refreshedAt':'old'}, 'new'))
+    def test_actual_refresh_records_fetch_time(self):
+        self.assertEqual(source_refresh_time(True, {'source':'abc'}, {}, 'new'),'new')

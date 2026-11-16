@@ -4,6 +4,8 @@ No per-extension editorial data. Network failures are explicit, never zero findi
 """
 import argparse, concurrent.futures, hashlib, json, os, re, shutil, subprocess, sys
 from datetime import datetime, timezone
+from image_notices import container_notices
+from guide_layout import getting_started
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit, parse_qs, unquote, quote
 import requests, yaml, hcl2, markdown
@@ -20,6 +22,13 @@ NOW = datetime.now(timezone.utc).isoformat(timespec='seconds')
 
 def run(*args):
     return subprocess.check_output(args, text=True).strip()
+
+def source_refresh_time(refreshed, commits, previous, now):
+    if refreshed:
+        return now
+    if previous.get('commits') == commits:
+        return previous.get('refreshedAt')
+    return None
 
 def checkout(name, refresh):
     path = CACHE/name
@@ -51,6 +60,19 @@ def packages(spdx):
                     'declared':p.get('licenseDeclared','NOASSERTION'),
                     'concluded':p.get('licenseConcluded','NOASSERTION'),
                     'files':p.get('licenseInfoFromFiles',[]),'advisoryURL':advisory_url(p)} for p in spdx.get('packages',[])],key=lambda p:(p['name'],p['version']))
+
+def notice_files(spdx):
+    """Find notice paths in the shipped-file inventory, not embedded license records."""
+    paths=set()
+    for item in spdx.get('files',[]):
+        path=item.get('fileName','').removeprefix('./').lstrip('/')
+        parts=path.lower().split('/')
+        if not path or '..' in parts or 'DIRECTORY' in item.get('fileTypes',[]):
+            continue
+        if parts[0]=='licenses' or parts[:3]==['usr','share','licenses'] or (
+            parts[:3]==['usr','share','doc'] and re.match(r'^(copyright|copying|licen[cs]e|notice)([.\-]|$)',parts[-1])):
+            paths.add('/'+path)
+    return sorted(paths)
 
 def check_digest(data, digest):
     if not digest.startswith('sha256:') or hashlib.sha256(data).hexdigest()!=digest[7:]:
@@ -158,6 +180,11 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--refresh',action='store_true');parser.add_argument('--scan',action='store_true');parser.add_argument('--workers',type=int,default=4);parser.add_argument('--reuse-evidence',action='store_true',help='Local layout iteration only: reuse exact-digest evidence with original scan timestamps')
     args=parser.parse_args();CACHE.mkdir(exist_ok=True)
     commits={n:checkout(n,args.refresh) for n in REPOS}
+    refresh_record=CACHE/'source-refresh.json'
+    previous=json.loads(refresh_record.read_text()) if refresh_record.exists() else {}
+    source_refreshed_at=source_refresh_time(args.refresh, commits, previous, NOW)
+    if args.refresh:
+        refresh_record.write_text(json.dumps({'commits':commits,'refreshedAt':source_refreshed_at}))
     recipes={};routes={}
     for src in ['upstream','source']:
         for path in (CACHE/src).rglob('metadata.hcl'):
@@ -205,7 +232,20 @@ def main():
     for image in images:
         for platform in image['platforms']:
             if platform['status']=='available':
-                platform['packages']=packages(json.loads((ROOT/'static'/platform['sbom']).read_text()))
+                spdx=json.loads((ROOT/'static'/platform['sbom']).read_text())
+                platform['packages']=packages(spdx)
+                platform['noticeFiles']=notice_files(spdx)
+    # Upstream scratch images have no usable dependency inventory. Read shipped
+    # notices independently from /licenses in their final filesystem.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
+        pending=[]
+        for image in images:
+            if image['reference'].startswith('ghcr.io/cloudnative-pg/'):
+                for platform in image['platforms']:
+                    pending.append((platform, pool.submit(container_notices,
+                        image['reference'], platform['architecture'], platform['digest'], CACHE)))
+        for platform, future in pending:
+            platform['containerNotices']=future.result()
     entries=[]
     content=ROOT/'content/extensions';content.mkdir(parents=True,exist_ok=True)
     for old in content.glob('*/index.md'): old.unlink()
@@ -223,7 +263,7 @@ def main():
         soup=BeautifulSoup(markdown.markdown(text),'html.parser');first=soup.find('p')
         description=first.get_text(' ',strip=True) if first else name
         entry={'name':name,'title':recipe['meta'].get('sql_name',name),'description':description,'publisher':publisher,'build':'PGRX' if recipe['build'].lower()=='pgrx' else recipe['build'].capitalize(),
-            'source':f"https://github.com/{repo}/blob/{recipe['commit']}/{recipe['path']}", 'variants':variants,
+            'source':f"https://github.com/{repo}/blob/main/{recipe['path']}", 'variants':variants,
             'version':variants[0]['version'],'distros':sorted({i['distro'] for i in variants}),'pgVersions':sorted({i['pg'] for i in variants}),
             'declaredLicenses':recipe['meta'].get('licenses',[])}
         entries.append(entry)
@@ -231,18 +271,18 @@ def main():
         fm={'title':entry['title'],'description':description,'extension':name,'layout':'extension'}
         body=readme_html(text,repo,recipe['commit'],recipe['path'],routes)
         (directory/'index.md').write_text('---\n'+yaml.safe_dump(fm,sort_keys=False)+'---\n'+body+'\n')
-    result={'generatedAt':NOW,'commits':commits,'count':len(entries),'extensions':entries,'database':database}
+    result={'generatedAt':NOW,'sourceRefreshedAt':source_refreshed_at,'commits':commits,'count':len(entries),'extensions':entries,'database':database}
     (ROOT/'data').mkdir(exist_ok=True)
     (ROOT/'data/generated.json').write_text(json.dumps(result))
     search=[{k:v for k,v in e.items() if k!='variants'} for e in entries]
-    (ROOT/'static/catalog.json').write_text(json.dumps({'generatedAt':NOW,'extensions':search}))
+    (ROOT/'static/catalog.json').write_text(json.dumps({'generatedAt':NOW,'sourceRefreshedAt':source_refreshed_at,'extensions':search}))
     # Keep the top-level setup in sync with the published README, without manually duplicating YAML.
     readme=(CACHE/'source/README.md').read_text()
     requirements='## Requirements'+readme.split('## Requirements',1)[1].split('\n---',1)[0]
     quick=readme.split('## Quick start',1)[1].split('\n## Supported Extensions',1)[0].strip().rstrip('-\n')
-    (ROOT/'content/getting-started.md').write_text('---\ntitle: Get started\ndescription: Install the catalog, configure alerts, and enable extensions in your databases.\n---\n'+
-        '<p class="source-note">From the <a href="https://github.com/cnpg-extensions/postgres-extensions-containers/blob/'+commits['source']+'/README.md">project quick start</a>. Requires CloudNativePG 1.29+, PostgreSQL 18+, and Kubernetes with ImageVolume support.</p>\n'+
-        readme_html(requirements+'\n\n'+quick,REPOS['source'],commits['source'],'README.md',routes,depth=1))
+    (ROOT/'content/getting-started.md').write_text('---\ntitle: Get started\ndescription: Configure alerts, install the catalog, and enable extensions in your databases.\n---\n'+
+        '<p class="source-note">From the <a href="https://github.com/cnpg-extensions/postgres-extensions-containers/blob/'+commits['source']+'/README.md">project quick start</a>.</p>\n'+
+        getting_started(readme_html(requirements+'\n\n'+quick,REPOS['source'],commits['source'],'README.md',routes,depth=1)))
     print(f'Generated {len(entries)} extension pages from {len(images)} catalog images',flush=True)
 
 if __name__=='__main__':main()

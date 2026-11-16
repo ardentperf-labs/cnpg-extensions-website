@@ -1,0 +1,18 @@
+<aside class="extension-sidebar" aria-label="Browse extensions">
+<details class="extension-browser" open>
+<summary>Extensions</summary>
+<div class="extension-browser-search" hidden>
+<label for="sidebar-extension-search">Find an extension</label>
+<input id="sidebar-extension-search" type="search" placeholder="Name or capability…" autocomplete="off" spellcheck="false">
+<p id="sidebar-extension-count" class="sr-only" role="status" aria-live="polite"></p>
+</div>
+<nav class="extension-browser-list" aria-label="All extensions">
+{{ $current := .Params.extension }}
+{{ range sort hugo.Data.generated.extensions "title" }}
+<a href="{{ printf "extensions/%s/" .name | relURL }}" data-extension-search="{{ printf "%s %s %s" .name .title .description | lower }}"{{ if eq .name $current }} aria-current="page"{{ end }}>{{ .title }}</a>
+{{ end }}
+</nav>
+<p class="sidebar-empty" hidden>No matching extensions. Try another name or capability.</p>
+<a class="sidebar-catalog" href="{{ `extensions/` | relURL }}">Explore the full catalog →</a>
+</details>
+</aside>

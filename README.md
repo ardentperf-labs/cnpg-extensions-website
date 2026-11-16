@@ -95,3 +95,16 @@ shortened; the Get started page supplies the full CronJob and RBAC.
 
 Website source: Apache-2.0. See NOTICE for imported documentation and third-party
 asset attribution, and the font/theme licenses alongside their sources.
+
+### Upstream container license notices
+
+For images published by CloudNativePG, the generator uses Docker to pull the
+catalog-resolved platform manifest by digest, create (but never run) a container,
+and export its final filesystem. Files under `/licenses` are displayed verbatim
+with their paths and SHA256 hashes. This does not produce a dependency inventory;
+upstream dependency tables remain hidden. Retrieval failures are shown separately
+from an inspected image with no notice files.
+
+Generation requires an accessible Docker daemon (provided by the Ubuntu GitHub
+Actions runner). Local notice results are cached by immutable platform digest in
+`.cache/image-notices-v1`; new image digests are extracted on subsequent builds.

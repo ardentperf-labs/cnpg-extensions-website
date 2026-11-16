@@ -1,0 +1,4 @@
+<details class="guide-disclosure"{{ with .Get "id" }} id="{{ . }}" data-outline{{ end }}>
+<summary>{{ .Get "title" }}</summary>
+<div>{{ .Inner | .Page.RenderString }}</div>
+</details>

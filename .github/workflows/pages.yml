@@ -33,7 +33,7 @@ jobs:
           restore-keys: oci-${{ runner.os }}-
       - name: Test metadata processing
         run: python -m unittest discover -s tests -v
-      - name: Refresh catalog, READMEs, SBOMs, and advisory matches
+      - name: Refresh catalog, READMEs, SBOMs, container notices, and advisory matches
         run: python scripts/generate.py --refresh --scan --workers 4
       - name: Build Hugo
         run: hugo --minify --baseURL 'https://ardentperf-labs.github.io/cnpg-extensions-website/'

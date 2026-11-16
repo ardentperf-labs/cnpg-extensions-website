@@ -1,1 +1,9 @@
-{{ define "main" }}<article class="wrap document"><header class="page-heading"><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lead">{{ . }}</p>{{ end }}</header><div class="prose">{{ .Content }}{{ if eq .File.Path "getting-started.md" }}{{ partial "getting-started-next.html" . }}{{ end }}</div></article>{{ end }}
+{{ define "main" }}
+<article class="wrap document guide-page">
+<header class="page-heading"><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lead">{{ . }}</p>{{ end }}</header>
+<div class="guide-layout">
+<aside class="guide-outline" hidden><details open><summary>On this page</summary><nav aria-label="Page contents"></nav></details></aside>
+<div class="prose guide-content">{{ .Content }}{{ if eq .File.Path "getting-started.md" }}{{ partial "getting-started-next.html" . }}{{ end }}</div>
+</div>
+</article>
+{{ end }}
