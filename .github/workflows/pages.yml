@@ -1,0 +1,58 @@
+name: Build and publish website
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 11 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python scripts/install-tools.py
+      - run: echo "$PWD/.tools" >> "$GITHUB_PATH"
+      - uses: actions/cache@v4
+        with:
+          path: .cache/oci
+          key: oci-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: oci-${{ runner.os }}-
+      - name: Test metadata processing
+        run: python -m unittest discover -s tests -v
+      - name: Refresh catalog, READMEs, SBOMs, and advisory matches
+        run: python scripts/generate.py --refresh --scan --workers 4
+      - name: Build Hugo
+        run: hugo --minify --baseURL 'https://ardentperf-labs.github.io/cnpg-extensions-website/'
+      - name: Validate generated output
+        run: python scripts/check-site.py public
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

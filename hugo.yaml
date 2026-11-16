@@ -1,0 +1,14 @@
+baseURL: https://ardentperf-labs.github.io/cnpg-extensions-website/
+locale: en-US
+title: CNPG Extensions
+theme: hextra
+enableRobotsTXT: true
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+outputs:
+  home: [HTML]
+disableKinds: [taxonomy, term, RSS]

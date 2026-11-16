@@ -1,0 +1,15 @@
+CNPG Extensions website
+Copyright contributors to CNPG Extensions.
+
+Website presentation follows the maintainer-approved CNPG Extensions prototype.
+Extension documentation is imported at build time from cnpg-extensions and
+cloudnative-pg/postgres-extensions-containers (Apache-2.0). Every page links to its
+source revision. SBOMs and advisory reports are generated from published images;
+third-party package license terms are preserved in those records.
+
+Hextra by imfing and contributors is MIT-licensed; see themes/hextra/LICENSE.
+Font licenses are retained under static/assets/fonts/.
+Third-party project marks retain their original owners' rights; asset sources
+are recorded in static/assets/extensions/sources.json. Marks identify featured
+extensions, not endorsements. Jeremy Schneider's portrait is his public GitHub
+profile image; bio source: https://ardentperf.com/about/.

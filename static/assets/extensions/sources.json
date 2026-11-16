@@ -1,0 +1,11 @@
+{
+  "note": "Upstream branding assets, downloaded unchanged for identification in the local design prototype. Third-party marks remain owned by their respective owners.",
+  "assets": {
+    "edb.png": "https://avatars.githubusercontent.com/u/7386129?v=4&s=240",
+    "tds-fdw.png": "https://avatars.githubusercontent.com/u/16578654?v=4&s=240",
+    "paradedb.svg": "https://raw.githubusercontent.com/paradedb/paradedb/main/docs/logo/paradedb-logo-light-large.svg",
+    "pg-duckdb.svg": "https://raw.githubusercontent.com/duckdb/pg_duckdb/main/logo-light.svg",
+    "pg-durable.svg": "https://raw.githubusercontent.com/microsoft/pg_durable/main/docs/website/lockup_arrow_dark.svg",
+    "citus.svg": "https://www.citusdata.com/ (inline header SVG; duplicate HTML alt attributes removed for valid standalone SVG)"
+  }
+}

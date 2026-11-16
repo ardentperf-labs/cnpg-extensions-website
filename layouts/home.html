@@ -1,0 +1,53 @@
+{{ define "main" }}
+      <section class="hero wrap" aria-labelledby="headline">
+        <div class="hero-copy">
+          <p class="eyebrow">POSTGRES, WITH MORE POSSIBILITIES</p>
+          <h1 id="headline"><span class="first-line">The <strong>COMPLETE</strong> and <span class="headline-phrase"><strong>SECURE</strong> Way</span></span><span class="second-line">To run Postgres on Kubernetes</span></h1>
+          <p class="lead">CloudNativePG with over 100 extensions, clear licensing, deep vulnerability tracking, and rapid package updates.</p>
+          <div class="completeness"><h2>More of the Postgres ecosystem, available for CloudNativePG.</h2><p>CNPG Extensions welcomes any OSI-approved license, including outside CNCF’s permitted set. That broader licensing scope brings more of the Postgres ecosystem into the catalog.</p></div>
+          <section class="extension-showcase" aria-label="Featured extensions">
+            <ul class="extension-list">
+              <li><a href="{{ if site.GetPage `extensions/pg-cron` }}{{ `extensions/pg-cron/` | relURL }}{{ else }}https://github.com/citusdata/pg_cron{{ end }}"><span class="extension-logo"><img src="{{ `assets/extensions/citus.svg` | relURL }}" alt="Citus" width="145" height="33"></span><span class="extension-name">pg_cron</span><span class="extension-capability">Job scheduling</span></a></li>
+              <li><a href="{{ if site.GetPage `extensions/pg-search` }}{{ `extensions/pg-search/` | relURL }}{{ else }}https://github.com/paradedb/paradedb{{ end }}"><span class="extension-logo"><img src="{{ `assets/extensions/paradedb.svg` | relURL }}" alt="ParadeDB" width="150" height="48"></span><span class="extension-name">pg_search</span><span class="extension-capability">Full-text search</span></a></li>
+              <li><a href="{{ if site.GetPage `extensions/pg-duckdb` }}{{ `extensions/pg-duckdb/` | relURL }}{{ else }}https://github.com/duckdb/pg_duckdb{{ end }}"><span class="extension-logo"><img src="{{ `assets/extensions/pg-duckdb.svg` | relURL }}" alt="pg_duckdb logo" width="150" height="48"></span><span class="extension-name">pg_duckdb</span><span class="extension-capability">DuckDB analytics</span></a></li>
+              <li><a href="{{ if site.GetPage `extensions/pg-durable` }}{{ `extensions/pg-durable/` | relURL }}{{ else }}https://github.com/microsoft/pg_durable{{ end }}"><span class="extension-logo logo-durable"><img src="{{ `assets/extensions/pg-durable.svg` | relURL }}" alt="pg_durable logo" width="150" height="48"></span><span class="extension-name">pg_durable</span><span class="extension-capability">Durable workflows</span></a></li>
+              <li><a href="{{ if site.GetPage `extensions/tds-fdw` }}{{ `extensions/tds-fdw/` | relURL }}{{ else }}https://github.com/tds-fdw/tds_fdw{{ end }}"><span class="extension-logo logo-square"><img src="{{ `assets/extensions/tds-fdw.png` | relURL }}" alt="tds-fdw GitHub project graphic" width="48" height="48"></span><span class="extension-name">tds_fdw</span><span class="extension-capability">SQL Server / Sybase</span></a></li>
+              <li><a href="{{ if site.GetPage `extensions/mysql-fdw` }}{{ `extensions/mysql-fdw/` | relURL }}{{ else }}https://github.com/EnterpriseDB/mysql_fdw{{ end }}"><span class="extension-logo logo-square"><img src="{{ `assets/extensions/edb.png` | relURL }}" alt="EDB" width="48" height="48"></span><span class="extension-name">mysql_fdw</span><span class="extension-capability">MySQL / MariaDB</span></a></li>
+            </ul>
+          </section>
+          <div class="hero-actions"><a class="button primary" href="{{ `extensions/` | relURL }}">Explore extensions <span aria-hidden="true">→</span></a><a class="button secondary" href="{{ `getting-started/#why-cnpg-extensions` | relURL }}">Why CNPG Extensions?</a></div>
+          <p class="hero-footnote">Open source. Built for CloudNativePG.</p>
+        </div>
+        <div class="technical setup-preview" id="getting-started">
+          <section class="setup-step" aria-labelledby="alerts-title">
+            <div class="setup-heading"><span class="setup-number">01</span><div><h2 id="alerts-title">Set up update alerts</h2><p>Set up email alerts, or your preferred notification, on this PromQL query.</p><p>Alerts remind you to run <code>ALTER EXTENSION … UPDATE</code> when needed.</p></div></div>
+            <div class="terminal-body"><pre><code id="alert-query">max by (namespace, cluster, datname, extname) (
+  cnpg_pg_extensions_update_available
+) == 1</code></pre></div>
+            <div class="terminal-bottom"><span class="language">PromQL</span><button type="button" id="copy">Copy query</button></div>
+            <span class="sr-only" id="copy-status" role="status" aria-live="polite"></span>
+          </section>
+          <section class="setup-step" aria-labelledby="schedule-title">
+            <div class="setup-heading"><span class="setup-number">02</span><div><h2 id="schedule-title">Schedule your updates</h2><p>Once alerts are working, refresh the catalog at the start of your weekly maintenance window.</p><p>Databases and extensions will be automatically updated to latest patch levels during the maintenance window.</p><p>You can opt out individual extensions by pinning their images in the corresponding <code>Cluster</code> resources.</p></div></div>
+            <div class="terminal-body"><pre><code>kind: CronJob
+spec:
+  schedule: "0 22 * * 2"
+  timeZone: America/Los_Angeles
+  jobTemplate:
+    # … container configuration omitted
+              command: [kubectl, apply, -f, https://raw.githubusercontent.com/cnpg-extensions/artifacts/main/image-catalogs-extensions/catalog-minimal-trixie.yaml]</code></pre></div>
+            <div class="setup-footer"><p>Every Tuesday at 10 PM Pacific. Shortened example.</p><a href="{{ `getting-started/` | relURL }}" target="_blank" rel="noopener">Full CronJob and permissions setup ↗</a></div>
+          </section>
+        </div>
+      </section>
+      <section class="catalog-preview wrap" id="extensions"><div><p class="eyebrow">A MORE COMPLETE POSTGRES</p><h2>More than 100 extensions.<br>More room to build.</h2><p>Explore the capabilities you need, with licensing and compatibility information close at hand.</p></div><div class="catalog-code"><span>TECHNICAL IDENTIFIER</span><code>pg_stat_statements</code><p>Query planning and execution statistics.</p></div></section>
+      <section class="security wrap" id="security" aria-labelledby="security-title">
+        <div class="section-heading"><p class="eyebrow">SECURITY YOU CAN INSPECT</p><h2 id="security-title">Trust starts with the details.</h2></div>
+        <div class="pillars">
+          <article><span class="pillar-number">01 / LICENSING</span><h3>Know what you deploy.</h3><p>Clear licensing for extensions and their components, so you can make informed choices.</p><a href="{{ `security/#licenses` | relURL }}">Clear licensing <span aria-hidden="true">↗</span></a></article>
+          <article><span class="pillar-number">02 / VULNERABILITY TRACKING</span><h3>See what’s inside.</h3><p>Detailed SBOMs map packages and libraries to security advisories. Follow the evidence.</p><a href="{{ `security/#vulnerabilities` | relURL }}">Deep vulnerability tracking <span aria-hidden="true">↗</span></a></article>
+          <article><span class="pillar-number">03 / RAPID UPDATES</span><h3>Keep moving forward.</h3><p>Consistently fast package updates put current packages and available fixes within reach.</p><a href="{{ `security/#updates` | relURL }}">Rapid package updates <span aria-hidden="true">↗</span></a></article>
+        </div>
+      </section>
+
+      <section class="maintainer wrap" aria-labelledby="maintainer-title"><div class="maintainer-label"><p class="eyebrow">THE PERSON BEHIND THE PROJECT</p><h2 id="maintainer-title">Meet the maintainer.</h2></div><div class="maintainer-bio"><img src="{{ `assets/jeremy.jpg` | relURL }}" alt="Jeremy Schneider" width="112" height="112" loading="lazy"><div><h3>Jeremy Schneider</h3><p class="maintainer-role">Primary maintainer · CNPG Extensions</p><p>Jeremy is a Postgres engineer and an organizer of the Seattle Postgres User Group. He writes about database internals, performance, and reliability at Ardent Performance Computing, and shares his experience through community talks and hands-on projects.</p><p><a href="https://ardentperf.com/about/">About Jeremy ↗</a> <a href="https://github.com/ardentperf">GitHub ↗</a></p></div></div></section>{{ end }}
