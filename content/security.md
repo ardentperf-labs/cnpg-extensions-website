@@ -155,16 +155,6 @@ grype sbom:image.spdx.json -o json > vulnerabilities.json
 
 A match needs review; zero matches are not a guarantee of safety. Scan the PostgreSQL base image separately.
 
-{{< disclosure title="How website scans work and what the results mean" >}}
-
-The website's nightly build updates Grype's vulnerability database and scans each available platform-specific SPDX inventory. Grype matches package identities and versions against its aggregated advisory data, including distribution and language ecosystem sources. Downloadable scan reports include the advisory, package, severity, and recorded fix version. Extension pages show per-package Grype match counts beside external advisory links, rather than a CVE table. Follow those links for context; the external database may cover different versions or advisory sources.
-
-No severity or “won't fix” filters are applied to website reports. A match is not proof that an issue is exploitable in your workload. Zero matches are not a guarantee of safety. A failed or unavailable scan is labeled explicitly, never reported as zero vulnerabilities. Each report includes its scan timestamp, scanner version, database metadata, architecture, and image digest.
-
-The results are refreshed when the site builds, not queried live in your browser. Check the displayed timestamps: a delayed or failed nightly build leaves the previous site's dated evidence in place.
-
-{{< /disclosure >}}
-
 {{< disclosure title="Rapid updates, on your schedule" id="updates" >}}
 
 Catalog refreshes run daily and after successful extension builds. Eligible dependency updates are automated after required checks pass; major updates and cases requiring SQL-version review remain manual. [Read the current update policy](https://github.com/cnpg-extensions/postgres-extensions-containers#automated-dependency-updates).
