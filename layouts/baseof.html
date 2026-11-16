@@ -19,5 +19,5 @@
 <div class="nav-tools"><button class="mode-toggle" type="button" aria-label="Switch color theme" title="Switch color theme">◐</button><button class="mobile-menu" id="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav">Menu <span aria-hidden="true">☰</span></button></div>
 </div><nav id="mobile-nav" aria-label="Mobile navigation" hidden>{{ partial "navigation.html" . }}</nav></header>
 <main id="main">{{ block "main" . }}{{ end }}</main>
-<footer class="wrap site-footer">{{ if not .IsHome }}<span>Open source. Built for CloudNativePG.</span>{{ end }}<span><a href="{{ `security/` | relURL }}">Security &amp; transparency</a> · <a href="https://github.com/cnpg-extensions">GitHub ↗</a></span></footer>
+<footer class="wrap site-footer"><span>Open source. Built for CloudNativePG.</span><span><a href="{{ `security/` | relURL }}">Security &amp; transparency</a> · <a href="https://github.com/cnpg-extensions">GitHub ↗</a></span></footer>
 </body></html>
