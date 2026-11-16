@@ -5,29 +5,45 @@ description: Verify who published an image. Inspect its build inputs, dependency
 
 ## Report a vulnerability {#report-a-vulnerability}
 
-Found a potential security issue? [Report it privately on GitHub](https://github.com/cnpg-extensions/postgres-extensions-containers/security/advisories/new). Include the affected extensions, image tags or digests, impact, and steps to reproduce. Please do not disclose vulnerabilities in public issues, discussions, pull requests, or Slack.
+For vulnerabilities in an extension itself, report directly to the extension project’s owners or maintainers using their security reporting process.
+
+For vulnerabilities in CNPG Extensions packaging, container builds, or infrastructure, [report privately on GitHub](https://github.com/cnpg-extensions/postgres-extensions-containers/security/advisories/new). Include the affected extensions, image tags or digests, impact, and steps to reproduce. Please do not disclose vulnerabilities in public issues, discussions, pull requests, or Slack.
 
 See the [security policy](https://github.com/cnpg-extensions/postgres-extensions-containers/blob/main/security.md) for response targets and coordinated disclosure, and [published security advisories](https://github.com/cnpg-extensions/postgres-extensions-containers/security/advisories) for past reports.
 
+## Compatible with CloudNativePG {#cloudnativepg-compatibility}
+
+CNPG Extensions follows the same verification, SBOM, and provenance conventions as [CloudNativePG’s PostgreSQL containers](https://cloudnative-pg.io/docs/current/installation_upgrade/#verifying-postgresql-operand-images). Our [SBOM generator](https://github.com/cnpg-extensions/cnpg-sbom-generator#compatibility) uses the same Syft and BuildKit approach, preserving SPDX formats while identifying the packages and license evidence shipped in each extension image.
+
+Use the same commands you use for your PostgreSQL container: Cosign to verify signatures, Docker Buildx to extract SBOMs and inspect provenance, Grype to check advisories, and Grant to report licenses. Supply the appropriate image reference and publisher identity. [CloudNativePG’s image inspection and verification instructions](https://cloudnative-pg.io/docs/current/installation_upgrade/#verifying-postgresql-operand-images) and the [SBOM generator’s inspection guide](https://github.com/cnpg-extensions/cnpg-sbom-generator#inspect-an-image) describe the shared workflow. For publisher-specific details, see the [CNPG Extensions SBOM and authenticity documentation](https://github.com/cnpg-extensions/postgres-extensions-containers#sboms-and-authenticity).
+
+See example captured command output for [OGR FDW](https://github.com/cnpg-extensions/postgres-extensions-containers/blob/main/examples/sbom-reports.txt) and [pg_parquet](https://github.com/cnpg-extensions/postgres-extensions-containers/blob/main/examples/pg-parquet-sbom-reports.txt), including vulnerability and license reports.
+
+## Find the image reference {#find-the-image-reference}
+
+Set `IMAGE` once; the examples throughout the rest of this page reuse it. Choose a digest-pinned image reference from its extension page, such as pg_cron:
+
+```sh
+IMAGE='ghcr.io/cnpg-extensions/pg-cron:1.6.8-202611130420-18-trixie@sha256:1f3eec1740ffa0c2856bb652883f031813cccbfc26134b82ba770cb63169a190'
+```
+
 ## Verify an image {#verify-the-publisher}
 
-Install [Cosign](https://docs.sigstore.dev/cosign/system_config/installation/), [Docker Buildx](https://docs.docker.com/build/install-buildx/), [jq](https://jqlang.org/), [Grype](https://github.com/anchore/grype), and optionally [Grant](https://github.com/anchore/grant). You do not need the extension build toolchain.
+Install [Cosign](https://docs.sigstore.dev/cosign/system_config/installation/) to verify the image signature.
 
-Copy a digest-pinned image reference from its extension page. Select the exact workflow identity for its publisher and build type:
+Select the exact workflow identity for its publisher and build type:
 
 {{< disclosure title="Choose the publisher and workflow identity" >}}
 
 | Publisher / build | Workflow identity |
 | --- | --- |
+| CloudNativePG / Debian | `https://github.com/cloudnative-pg/postgres-extensions-containers/.github/workflows/bake_targets.yml@refs/heads/main` |
 | CNPG Extensions / Debian | `https://github.com/cnpg-extensions/postgres-extensions-containers/.github/workflows/bake_targets.yml@refs/heads/main` |
 | CNPG Extensions / PGRX or Universe | `https://github.com/cnpg-extensions/postgres-extensions-containers/.github/workflows/source-build-targets.yml@refs/heads/main` |
-
-Upstream CloudNativePG images have their own publisher identity; follow [their verification instructions](https://github.com/cloudnative-pg/postgres-extensions-containers). Do not apply the CNPG Extensions identity to another publisher.
 
 {{< /disclosure >}}
 
 ```sh
-IMAGE='ghcr.io/cnpg-extensions/EXTENSION@sha256:DIGEST'
 IDENTITY='https://github.com/cnpg-extensions/postgres-extensions-containers/.github/workflows/bake_targets.yml@refs/heads/main'
 
 cosign verify "$IMAGE" \
@@ -36,9 +52,11 @@ cosign verify "$IMAGE" \
   --new-bundle-format=false
 ```
 
-Replace the placeholders and check for a successful verification. The legacy bundle option matches this project's current signing format. A valid index signature binds the platform manifests and their attached SBOM and BuildKit provenance.
+Check for a successful verification. A valid index signature binds the platform manifests and their attached SBOM and BuildKit provenance.
 
-{{< disclosure title="Inspect build provenance" id="inspect-build-provenance" >}}
+## Inspect build provenance {#inspect-build-provenance}
+
+Requires [Docker Buildx](https://docs.docker.com/build/install-buildx/) and [jq](https://jqlang.org/).
 
 ```sh
 docker buildx imagetools inspect "$IMAGE" \
@@ -50,9 +68,9 @@ jq . provenance.json
 
 Review the recorded source revision, build inputs, and parameters. Inspecting provenance alone is not signature verification. Use `linux/arm64` to inspect ARM64 evidence. For a single-platform index, confirm its platform and use `.Provenance.SLSA` instead.
 
-{{< /disclosure >}}
-
 ## Inspect dependencies and licenses {#extract-the-package-inventory}
+
+Requires [Docker Buildx](https://docs.docker.com/build/install-buildx/) and [jq](https://jqlang.org/).
 
 ```sh
 docker buildx imagetools inspect "$IMAGE" \
@@ -88,7 +106,7 @@ jq --arg name "$PACKAGE" '.packages[] |
 
 The expandable example above shows output from an actual published SBOM. The extension pages expose the same fields for every package, plus any extracted license texts. A recipe's top-level license is not a substitute for the complete container inventory.
 
-`NOASSERTION` means the document makes no assertion. `LicenseRef-…` can refer to custom or unclassified terms. Preserve `AND` and `OR` expressions when assessing obligations; do not treat them as interchangeable. With Grant:
+`NOASSERTION` means the document makes no assertion. `LicenseRef-…` can refer to custom or unclassified terms. Preserve `AND` and `OR` expressions when assessing obligations; do not treat them as interchangeable. Alternatively, install [Grant](https://github.com/anchore/grant) for license reports:
 
 ```sh
 grant list image.spdx.json
@@ -96,6 +114,8 @@ grant list image.spdx.json MIT
 ```
 
 {{< disclosure title="Retrieve an original notice from the image" id="retrieve-an-original-notice" >}}
+
+Requires Docker with a running daemon, jq, and `sha256sum`.
 
 License text can be shipped as a file in the container even when it is not embedded in the SBOM. The extension page lists notice paths recorded for the selected image. Copy a file from that exact image and architecture, then verify it against the SBOM checksum. The container does not need to run or contain a shell.
 
@@ -147,24 +167,16 @@ Several paths may contain identical copies of a notice; choose one. A named refe
 
 ## Check advisories {#vulnerabilities}
 
+Install [Grype](https://github.com/anchore/grype) and use the `image.spdx.json` extracted above.
+
 ```sh
 grype db update
 grype sbom:image.spdx.json -o table
 grype sbom:image.spdx.json -o json > vulnerabilities.json
 ```
 
-A match needs review; zero matches are not a guarantee of safety. Scan the PostgreSQL base image separately.
-
-{{< disclosure title="Rapid updates, on your schedule" id="updates" >}}
+## Rapid updates {#updates}
 
 Catalog refreshes run daily and after successful extension builds. Eligible dependency updates are automated after required checks pass; major updates and cases requiring SQL-version review remain manual. [Read the current update policy](https://github.com/cnpg-extensions/postgres-extensions-containers#automated-dependency-updates).
 
 Your CronJob initiates catalog updates at the start of your maintenance window. It does not impose a rollout end time. Catalog-referencing clusters adopt changed image references; SQL extension upgrades can still need an explicit version change or `ALTER EXTENSION … UPDATE`. [Set up monitoring before scheduling updates](../getting-started/).
-
-{{< /disclosure >}}
-
-{{< disclosure title="Sources and scope" id="sources-and-scope" >}}
-
-This guide follows the project's [SBOM and authenticity documentation](https://github.com/cnpg-extensions/postgres-extensions-containers#sboms-and-authenticity) and the [shared SBOM generator guide](https://github.com/cnpg-extensions/cnpg-sbom-generator#inspect-an-image). Those documents remain authoritative for publisher-specific details.
-
-{{< /disclosure >}}

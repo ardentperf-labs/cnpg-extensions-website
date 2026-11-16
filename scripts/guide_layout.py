@@ -18,10 +18,7 @@ def getting_started(html):
         if node==steps[0]:break
         requirements.append(str(node))
     return ( '<section class="guide-prerequisites">'+''.join(requirements)+'</section>'
-        '<h2 id="install-the-catalog">1. Install the extension catalog</h2>'
+        '<h2 id="configure-update-alerts">1. Configure and test update alerts first</h2>'
         '<p>Configure and test extension-update alerts before installing the catalog. Alerts remind you to run <code>ALTER EXTENSION … UPDATE</code> when needed.</p>'
-        '<details class="guide-disclosure"><summary>Configure and test update alerts first</summary>'+sections[0]+'</details>'
-        '<p>Once alerts are working, install the catalog:</p>'
-        '<pre><code>kubectl apply -f https://raw.githubusercontent.com/cnpg-extensions/artifacts/main/image-catalogs-extensions/catalog-minimal-trixie.yaml</code></pre>'
-        '<p class="guide-check">Check: <code>kubectl get clusterimagecatalog postgresql-minimal-trixie</code> should show the installed catalog.</p>'
-        '<details class="guide-disclosure" id="schedule-maintenance" data-outline><summary>Schedule automatic updates during your maintenance window</summary>'+sections[1]+'</details>')
+        '<details class="guide-disclosure"><summary>Alert setup instructions</summary>'+sections[0]+'</details>'
+        '<h2 id="schedule-maintenance">2. Schedule automatic updates during your maintenance window</h2><details class="guide-disclosure"><summary>Maintenance setup instructions</summary>'+sections[1]+'</details>')

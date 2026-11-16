@@ -12,3 +12,9 @@ markup:
 outputs:
   home: [HTML]
 disableKinds: [taxonomy, term, RSS]
+
+# The site supplies its own accessible Copy buttons in assets/js/site.js.
+params:
+  highlight:
+    copy:
+      enable: false

@@ -14,7 +14,8 @@ class GuideLayoutTests(unittest.TestCase):
         self.assertIn('metric == 1',folds[0].text)
         self.assertIn('kind: ClusterRole',folds[1].text)
         self.assertIn('Rollout caveat',folds[1].text)
-        self.assertIn('kubectl apply',soup.select_one('#install-the-catalog').find_next('pre').find_next('pre').text)
+        self.assertEqual([pre.text for pre in soup.find_all('pre')], ['metric == 1', 'kind: ClusterRole'])
+        self.assertEqual(soup.select_one('#schedule-maintenance').name, 'h2')
 
     def test_source_structure_changes_require_review(self):
         with self.assertRaises(ValueError):

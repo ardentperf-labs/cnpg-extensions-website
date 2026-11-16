@@ -10,12 +10,21 @@ menu?.addEventListener('click', () => { const nav = document.getElementById('mob
 async function copyText(text, button, code) {
  let copied = false;
  try { await navigator.clipboard.writeText(text); copied = true; } catch { const field = document.createElement('textarea'); field.value = text; field.style.position = 'fixed'; field.style.opacity = '0'; document.body.append(field); field.select(); try { copied = document.execCommand('copy'); } catch {} field.remove(); button.focus(); }
- const label = button.textContent; button.textContent = copied ? 'Copied' : 'Select and copy';
+ const original = button.innerHTML; const label = button.getAttribute('aria-label'); const title = button.title;
+ button.disabled = true; button.textContent = copied ? 'Copied' : 'Select and copy';
+ button.setAttribute('aria-label', button.textContent); button.title = button.textContent;
  if (!copied) { const range = document.createRange(); range.selectNodeContents(code); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); }
- setTimeout(() => { button.textContent = label; }, 1800);
+ setTimeout(() => { button.innerHTML = original; if (label) button.setAttribute('aria-label', label); else button.removeAttribute('aria-label'); button.title = title; button.disabled = false; }, 1800);
 }
 document.getElementById('copy')?.addEventListener('click', e => { const code = document.getElementById('alert-query'); copyText(code.textContent, e.currentTarget, code); });
-document.querySelectorAll('.prose pre').forEach(pre => { const button = document.createElement('button'); button.type = 'button'; button.className = 'copy-code'; button.textContent = 'Copy'; button.setAttribute('aria-label','Copy code example'); button.addEventListener('click', () => copyText(pre.textContent, button, pre)); pre.after(button); });
+document.querySelectorAll('.prose pre').forEach(pre => {
+ const wrapper = document.createElement('div'); wrapper.className = 'code-with-copy';
+ pre.before(wrapper); wrapper.append(pre);
+ const button = document.createElement('button'); button.type = 'button'; button.className = 'copy-code';
+ button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>';
+ button.title = 'Copy code'; button.setAttribute('aria-label', 'Copy code example');
+ button.addEventListener('click', () => copyText(pre.textContent, button, pre)); wrapper.append(button);
+});
 const search = document.getElementById('extension-search');
 if (search) {
  const grid = document.getElementById('catalog-grid'); const cards = [...grid.children];
@@ -109,11 +118,14 @@ if (guide) {
  const outline = guide.querySelector('.guide-outline');
  const nav = outline.querySelector('nav');
  const content = guide.querySelector('.guide-content');
- content.querySelectorAll('h2[id], h3[id], details[data-outline][id]').forEach(section => {
+ content.querySelectorAll('h2, h3').forEach(section => {
   if (section.parentElement.closest('details')) return;
   const link = document.createElement('a');
-  link.href = `#${section.id}`;
-  link.textContent = section.matches('details') ? section.querySelector('summary').textContent : section.textContent;
+  const anchor = section.id || section.querySelector('[id]')?.id;
+  if (!anchor) return;
+  link.href = `#${anchor}`;
+  link.textContent = section.textContent.trim();
+  if (section.tagName === 'H3') link.classList.add('outline-subheading');
   nav.append(link);
  });
  if (nav.children.length) {
@@ -129,7 +141,7 @@ if (guide) {
   for (let node = target; node && node !== content; node = node.parentElement) {
    if (node.matches('details')) node.open = true;
   }
-  requestAnimationFrame(() => target.scrollIntoView({block:'start'}));
+  requestAnimationFrame(() => (target.closest('h2,h3') || target).scrollIntoView({block:'start'}));
  }
  window.addEventListener('hashchange', revealGuideAnchor);
  nav.addEventListener('click', event => {

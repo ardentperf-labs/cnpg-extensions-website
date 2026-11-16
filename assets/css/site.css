@@ -165,3 +165,12 @@ input:focus-visible{outline:3px solid var(--accent);outline-offset:5px}
 .prose .github-alert .github-alert-title{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--accent);margin:0 0 8px}
 .github-alert-icon{font-family:Arial,"Segoe UI Symbol",sans-serif;font-size:22px;line-height:1}
 .prose .github-alert>p:last-child{margin-bottom:0}
+
+.guide-outline a.outline-subheading{padding-left:24px;font-size:13px}
+
+/* Keep copy controls inside code boxes, separate from the scrollable code. */
+.code-with-copy{position:relative;min-width:0}
+.prose .code-with-copy pre{padding-right:68px;min-height:64px}
+.code-with-copy .copy-code{position:absolute;top:8px;right:8px;margin:0;display:flex;align-items:center;justify-content:center;padding:8px;z-index:1;font-size:12px;line-height:1.2;background:var(--surface);color:var(--ink)}
+.code-with-copy .copy-code:hover{border-color:var(--accent);color:var(--accent)}
+.code-with-copy .copy-code:focus-visible{outline:2px solid var(--accent);outline-offset:2px}

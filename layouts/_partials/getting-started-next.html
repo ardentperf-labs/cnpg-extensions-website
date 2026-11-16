@@ -1,4 +1,4 @@
-<h2 id="choose-an-extension">2. Add an extension to your cluster</h2>
+<h2 id="choose-an-extension">3. Add an extension to your cluster</h2>
 <p><a href="{{ `extensions/` | relURL }}">Browse the catalog</a> and open an extension’s documentation. Follow its Cluster example to enable the extension image, including any preload settings or required dependencies. Keep your existing instance and storage configuration, and reference the installed catalog:</p>
 <pre><code>imageCatalogRef:
   apiGroup: postgresql.cnpg.io
@@ -6,12 +6,7 @@
   name: postgresql-minimal-trixie
   major: 18</code></pre>
 <p>For a new installation, first follow the <a href="https://cloudnative-pg.io/docs/1.30/quickstart/">CloudNativePG quick start</a> to install the operator and create a database cluster.</p>
-<h2 id="enable-in-a-database">3. Enable it in a database</h2>
+<h2 id="enable-in-a-database">4. Enable it in a database</h2>
 <p>Making an extension image available to the cluster does not install it into every database. You can enable an extension declaratively with a CloudNativePG <code>Database</code> resource, or run <code>CREATE EXTENSION</code> through SQL. The extension’s README provides its exact SQL name and any setup requirements.</p>
 <details class="guide-disclosure"><summary>Let database users enable approved extensions</summary><p>Platform teams can make extension containers available by default while letting users enable only the extensions their databases need. For extensions that normally require superuser privileges, <a href="{{ `extensions/pgextwlist/` | relURL }}">pgextwlist</a> allows administrators to approve a selection for non-superuser installation.</p></details>
 <p class="guide-check">Check: verify the installed extension with <code>\dx</code> in psql, and keep the update alerts configured in step 1. After container updates, use the extension’s supported SQL upgrade path where needed.</p>
-<details class="guide-disclosure" id="why-cnpg-extensions" data-outline><summary>Why CNPG Extensions?</summary>
-<p>A broader extension catalog, with clear licensing and inspectable package evidence. The catalog incorporates upstream CloudNativePG entries and gives them precedence, adding Debian, PGRX, and Universe extensions maintained by this project.</p>
-<p>The project welcomes OSI-approved licenses, including licenses outside CNCF’s permitted set. See the <a href="https://github.com/cnpg-extensions/postgres-extensions-containers#supported-extensions">current licensing classification</a>, <a href="https://github.com/cnpg-extensions/postgres-extensions-containers/blob/main/source-build/README.md#open-source-licensing-policy">inclusion policy</a>, and <a href="https://github.com/cncf/foundation/blob/main/policies-guidance/allowed-third-party-license-policy.md">CNCF license policy</a> for the precise scope. Package-specific notices and SBOMs remain available on each extension page.</p>
-
-</details>
